@@ -1,0 +1,43 @@
+name: 신규 공고 발견
+
+# 관심 직무 공고를 자소설닷컴 목록 API에서 찾아 Notion에 '발견됨'으로 등록한다.
+# 매시간 도는 tracker.yml과 달리 하루 한 번이면 충분하다.
+on:
+  schedule:
+    - cron: "0 0 * * *"  # 매일 09:00 KST (UTC 00:00)
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "앞으로 며칠치 공고를 볼지"
+        required: false
+        default: "60"
+
+jobs:
+  discover:
+    # 운영(Notion 연동)은 원본 비공개 저장소에서만 실행한다. 공개 사본에서는 secrets가 없어 건너뛴다.
+    if: github.repository == 'Hun2e/Jasoseol-tracking'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 의존성 설치
+        run: pip install requests
+
+      - name: 발견기 실행
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_DB_ID:   ${{ secrets.NOTION_DB_ID }}
+          DISCOVER_DAYS:  ${{ github.event.inputs.days || '60' }}
+          # 키워드를 바꾸려면 Secrets에 KEYWORDS / EXCLUDE를 JSON 배열로 등록한다.
+          # 없으면 discover.py의 기본값을 쓴다.
+          KEYWORDS:       ${{ secrets.KEYWORDS }}
+          EXCLUDE:        ${{ secrets.EXCLUDE }}
+        run: python scripts/discover.py

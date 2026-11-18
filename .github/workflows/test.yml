@@ -1,0 +1,30 @@
+name: 필터 테스트
+
+# 필터 키워드를 고친 커밋이 예전 오탐을 되살리지 않는지 확인한다.
+on:
+  push:
+    paths:
+      - "scripts/**"
+      - "tests/**"
+      - ".github/workflows/test.yml"
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 의존성 설치
+        run: pip install requests pytest
+
+      - name: 테스트 실행
+        run: python -m pytest -q tests
